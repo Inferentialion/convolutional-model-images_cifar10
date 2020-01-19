@@ -82,7 +82,7 @@ accuracy_metric = tf.keras.metrics.CategoricalAccuracy()
 
 # Saving the model:
 checkpoint_path = "./checkpoints/cifar10conv/train"
-checkpoint = tf.train.Checkpoint(model=convcifar_model, optimizer=optimizer)  # model= , optimizer=
+checkpoint = tf.train.Checkpoint(model=convcifar_model, optimizer=optimizer)
 checkpoint_manager = tf.train.CheckpointManager(checkpoint, checkpoint_path, max_to_keep=3)
 
 
