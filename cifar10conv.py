@@ -8,11 +8,15 @@ cifar_train, cifar_test = cifar['train'], cifar['test']
 
 # cifar_train set has 50000 samples
 
+BATCH_SIZE = 100
+
 # Create dataset pipeline:
 assert isinstance(cifar_train, tf.data.Dataset)
 cifar_train = cifar_train.shuffle(buffer_size=50000)
-cifar_train = cifar_train.batch(batch_size=100)
+cifar_train = cifar_train.batch(batch_size=BATCH_SIZE)
 
+cifar_test = cifar_test.shuffle(buffer_size=10000)
+cifar_test = cifar_test.batch(batch_size=BATCH_SIZE)
 
 def conv_block(units, previous_block_units=None, first_block=False):
 
@@ -132,7 +136,44 @@ for epoch in range(EPOCHS):
         checkpoint_manager.save()
         print(f"Checkpoint saved!")
 
+        
+# TEST PREDICTIONS -----------------------------------------------------------------------------------
 
+# Load checkpoints:
+checkpoint_dir = os.path.dirname("./checkpoints/cifar10conv/train/")
+latest = tf.train.latest_checkpoint(checkpoint_dir)
+checkpoint.restore(latest)
+
+print(f'Latest checkpoint at: {latest} restored!!')
+
+print()
+print("-" * 80)
+print("TEST SET PREDICTIONS:")
+
+# Predict on test set:
+
+accuracies = []
+
+for batch, element in enumerate(cifar_test):
+
+    labels, images = element['label'], element['image']
+
+    # Again, a couple changes to inputs and labels:
+    labels = tf.one_hot(labels, 10)
+    images = tf.cast(images, tf.float32)  # Otherwise they are tf.unint8
+
+    predictions = convcifar_model(images)
+    current_loss = loss_object(labels, predictions)
+
+    test_loss_metric(current_loss)
+    test_accuracy_metric(labels, predictions)
+
+    print(f"Batch {batch}. Loss: {test_loss_metric.result():.4f}. Accuracy: {test_accuracy_metric.result():.4f}.")
+    accuracies.append(test_accuracy_metric.result())
+
+# Overall accuracy:
+overall_accuracy = tf.math.reduce_mean(accuracies)
+print(f"\nOverall test accuracy is: {overall_accuracy:.4f}")
 
 
 
